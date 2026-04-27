@@ -1,0 +1,79 @@
+name: Security — Docker
+
+on:
+  workflow_call:
+    inputs:
+      dockerfiles:
+        description: Chemins des Dockerfiles séparés par des espaces (ex. "api/Dockerfile ui/Dockerfile")
+        type: string
+        default: "Dockerfile"
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+permissions:
+  contents: read
+
+jobs:
+  hadolint:
+    name: hadolint (Dockerfile best practices)
+    runs-on: komrad-runners
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install hadolint
+        run: |
+          curl -sSLo hadolint https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint-Linux-x86_64
+          chmod +x hadolint
+          sudo mv hadolint /usr/local/bin/
+          hadolint --version
+      - name: Run hadolint
+        env:
+          DOCKERFILES: ${{ inputs.dockerfiles }}
+        run: |
+          FAILED=0
+          for df in $DOCKERFILES; do
+            ctx=$(dirname "$df")
+            [ "$ctx" = "." ] && label="app" || label=$(basename "$ctx")
+            echo "==> hadolint $df"
+            hadolint "$df" --format sarif > "hadolint-${label}.sarif" || FAILED=1
+            hadolint "$df" --format json > "hadolint-${label}.json" || true
+          done
+          exit $FAILED
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: hadolint-report
+          path: hadolint-*.sarif
+          retention-days: 30
+
+  grype:
+    name: grype (image vulnerabilities)
+    runs-on: komrad-runners
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install grype
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+          grype version
+      - name: Build and scan images
+        env:
+          DOCKERFILES: ${{ inputs.dockerfiles }}
+        run: |
+          FAILED=0
+          for df in $DOCKERFILES; do
+            ctx=$(dirname "$df")
+            [ "$ctx" = "." ] && label="app" || label=$(basename "$ctx")
+            echo "==> Building $df (context: $ctx)"
+            docker build -t "scan-${label}:latest" -f "$df" "$ctx"
+            echo "==> grype scan-${label}:latest (gate: HIGH+ with fix)"
+            grype "docker:scan-${label}:latest" --fail-on high --only-fixed --output table || FAILED=1
+            echo "==> grype full JSON"
+            grype "docker:scan-${label}:latest" --output json > "grype-${label}.json" || true
+          done
+          exit $FAILED
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: grype-report
+          path: grype-*.json
+          retention-days: 30

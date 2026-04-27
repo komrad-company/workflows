@@ -1,0 +1,60 @@
+name: Security — Rust
+
+on:
+  workflow_call:
+    inputs:
+      rust-version:
+        description: Version de la toolchain Rust
+        type: string
+        default: "stable"
+      working-directory:
+        description: Répertoire contenant le Cargo.toml racine
+        type: string
+        default: "."
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+permissions:
+  contents: read
+
+jobs:
+  cargo-audit:
+    name: cargo audit (RustSec)
+    runs-on: komrad-runners
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ inputs.rust-version }}
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+      - name: Run cargo audit
+        working-directory: ${{ inputs.working-directory }}
+        run: cargo audit --json > cargo-audit.json
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: cargo-audit-report
+          path: ${{ inputs.working-directory }}/cargo-audit.json
+          retention-days: 30
+
+  cargo-deny:
+    name: cargo deny (licences + bans + advisories)
+    runs-on: komrad-runners
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ inputs.rust-version }}
+      - name: Install cargo-deny
+        run: cargo install cargo-deny --locked
+      - name: Run cargo deny
+        working-directory: ${{ inputs.working-directory }}
+        run: cargo deny check 2>&1 | tee cargo-deny.txt
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: cargo-deny-report
+          path: ${{ inputs.working-directory }}/cargo-deny.txt
+          retention-days: 30

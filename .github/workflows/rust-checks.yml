@@ -1,0 +1,95 @@
+name: Rust Checks
+
+on:
+  workflow_call:
+    inputs:
+      rust-version:
+        description: Version de la toolchain Rust
+        type: string
+        default: "stable"
+      working-directory:
+        description: Répertoire contenant le Cargo.toml racine
+        type: string
+        default: "."
+      workspace:
+        description: Passe --workspace à cargo fmt/clippy/test
+        type: boolean
+        default: false
+      sqlx-offline:
+        description: Injecte SQLX_OFFLINE=true (pas de DB au build)
+        type: boolean
+        default: false
+      run-tests:
+        description: Active cargo test
+        type: boolean
+        default: true
+      run-build:
+        description: Active cargo build --release
+        type: boolean
+        default: true
+      artifact-name:
+        description: Nom de l'artifact uploadé (vide = pas d'upload)
+        type: string
+        default: ""
+      binary-path:
+        description: Chemin du binaire relatif au working-directory (ex. target/release/monapp)
+        type: string
+        default: ""
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  lint:
+    name: Lint (fmt + clippy)
+    runs-on: komrad-runners
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ inputs.rust-version }}
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "${{ inputs.working-directory }} -> target"
+      - name: cargo fmt --check
+        working-directory: ${{ inputs.working-directory }}
+        run: cargo fmt --check
+      - name: cargo clippy
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          WORKSPACE_FLAG: ${{ inputs.workspace && '--workspace' || '' }}
+        run: cargo clippy $WORKSPACE_FLAG -- -D warnings
+
+  build:
+    name: Build (test + release)
+    runs-on: komrad-runners
+    needs: lint
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ inputs.rust-version }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "${{ inputs.working-directory }} -> target"
+      - name: cargo test
+        if: inputs.run-tests
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          SQLX_OFFLINE: ${{ inputs.sqlx-offline && 'true' || '' }}
+          WORKSPACE_FLAG: ${{ inputs.workspace && '--workspace' || '' }}
+        run: cargo test $WORKSPACE_FLAG
+      - name: cargo build --release
+        if: inputs.run-build
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          SQLX_OFFLINE: ${{ inputs.sqlx-offline && 'true' || '' }}
+        run: cargo build --release
+      - name: Upload binary
+        if: inputs.artifact-name != ''
+        uses: actions/upload-artifact@v5
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: ${{ inputs.working-directory }}/${{ inputs.binary-path }}
+          retention-days: 1

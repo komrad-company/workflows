@@ -1,0 +1,51 @@
+name: Security — NPM
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: Version Node.js
+        type: string
+        default: "22"
+      working-directory:
+        description: Répertoire contenant package.json
+        type: string
+        default: "."
+      lockfile-path:
+        description: Chemin du lockfile pour le cache npm
+        type: string
+        default: "package-lock.json"
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+permissions:
+  contents: read
+
+jobs:
+  npm-audit:
+    name: npm audit
+    runs-on: komrad-runners
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+          cache-dependency-path: ${{ inputs.lockfile-path }}
+      - name: Install deps
+        working-directory: ${{ inputs.working-directory }}
+        run: npm ci --ignore-scripts
+      - name: npm audit (full JSON — reporting)
+        if: always()
+        working-directory: ${{ inputs.working-directory }}
+        run: npm audit --json > npm-audit.json || true
+      - name: npm audit (fail on HIGH+)
+        working-directory: ${{ inputs.working-directory }}
+        run: npm audit --audit-level=high
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: npm-audit-report
+          path: ${{ inputs.working-directory }}/npm-audit.json
+          retention-days: 30

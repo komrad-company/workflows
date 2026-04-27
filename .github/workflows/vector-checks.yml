@@ -1,0 +1,105 @@
+name: Vector Checks
+
+on:
+  workflow_call:
+    inputs:
+      vector-image:
+        description: Image Docker Vector à utiliser
+        type: string
+        default: "timberio/vector:0.54.0-debian"
+      validate-script:
+        description: Script de validation des configs
+        type: string
+        default: "ci/validate.sh"
+      test-script:
+        description: Script de tests Vector
+        type: string
+        default: "ci/test.sh"
+      coverage-script:
+        description: Script de couverture des parsers
+        type: string
+        default: "ci/coverage.sh"
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  validate:
+    name: Vector validate
+    runs-on: komrad-runners
+    container:
+      image: ${{ inputs.vector-image }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Validate Vector configs
+        env:
+          VALIDATE_SCRIPT: ${{ inputs.validate-script }}
+        run: |
+          chmod +x "$VALIDATE_SCRIPT"
+          "$VALIDATE_SCRIPT"
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: validate-results
+          path: ci/results/
+          retention-days: 7
+
+  test:
+    name: Vector test
+    runs-on: komrad-runners
+    container:
+      image: ${{ inputs.vector-image }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Run Vector tests
+        env:
+          TEST_SCRIPT: ${{ inputs.test-script }}
+        run: |
+          chmod +x "$TEST_SCRIPT"
+          "$TEST_SCRIPT"
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: test-results
+          path: ci/results/
+          retention-days: 7
+
+  coverage:
+    name: Vector coverage
+    runs-on: komrad-runners
+    container:
+      image: ${{ inputs.vector-image }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check coverage
+        env:
+          COVERAGE_SCRIPT: ${{ inputs.coverage-script }}
+        run: |
+          chmod +x "$COVERAGE_SCRIPT"
+          "$COVERAGE_SCRIPT"
+
+  report:
+    name: CI report
+    runs-on: komrad-runners
+    needs: [validate, test]
+    if: always()
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v5
+        with:
+          name: validate-results
+          path: ci/results/
+      - uses: actions/download-artifact@v5
+        with:
+          name: test-results
+          path: ci/results/
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Generate report
+        run: python ci/report.py
+      - uses: actions/upload-artifact@v5
+        with:
+          name: ci-report
+          path: ci/results/report.md
+          retention-days: 30

@@ -1,0 +1,45 @@
+name: Docker Publish
+
+on:
+  workflow_call:
+    inputs:
+      context:
+        description: Contexte Docker (répertoire contenant le Dockerfile)
+        required: true
+        type: string
+      image:
+        description: Nom complet de l'image (ex. ghcr.io/komrad-company/kolektor)
+        required: true
+        type: string
+      gha-cache:
+        description: Active le cache des layers Docker via GitHub Actions
+        type: boolean
+        default: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  publish:
+    name: Build & Push
+    runs-on: komrad-runners
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ inputs.context }}
+          push: true
+          tags: |
+            ${{ inputs.image }}:${{ github.sha }}
+            ${{ inputs.image }}:latest
+          cache-from: ${{ inputs.gha-cache && 'type=gha' || '' }}
+          cache-to: ${{ inputs.gha-cache && 'type=gha,mode=max' || '' }}
