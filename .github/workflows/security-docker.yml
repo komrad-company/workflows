@@ -53,7 +53,10 @@ jobs:
       - uses: actions/checkout@v5
       - name: Install grype
         run: |
-          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+          curl -sSLo grype.tar.gz "https://github.com/anchore/grype/releases/download/v0.87.0/grype_0.87.0_linux_amd64.tar.gz"
+          tar -xzf grype.tar.gz grype
+          sudo mv grype /usr/local/bin/
+          rm grype.tar.gz
           grype version
       - name: Build and scan images
         env:
