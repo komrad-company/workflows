@@ -1,0 +1,56 @@
+name: Security — CodeQL
+
+on:
+  workflow_call:
+    inputs:
+      languages:
+        description: "Langages à analyser (JSON array, ex: '[\"javascript-typescript\"]')"
+        type: string
+        required: true
+      working-directory:
+        description: Répertoire racine du code source
+        type: string
+        default: "."
+      build-command:
+        description: Commande de build pour les langages compilés (vide = autobuild)
+        type: string
+        default: ""
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  codeql:
+    name: CodeQL (${{ matrix.language }})
+    runs-on: komrad-runners
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ${{ fromJson(inputs.languages) }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          source-root: ${{ inputs.working-directory }}
+
+      - name: Autobuild
+        if: inputs.build-command == ''
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Custom build
+        if: inputs.build-command != ''
+        working-directory: ${{ inputs.working-directory }}
+        run: ${{ inputs.build-command }}
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
