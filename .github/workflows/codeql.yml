@@ -7,14 +7,6 @@ on:
         description: "Langages à analyser (JSON array, ex: '[\"javascript-typescript\"]')"
         type: string
         required: true
-      working-directory:
-        description: Répertoire racine du code source
-        type: string
-        default: "."
-      build-command:
-        description: Commande de build pour les langages compilés (vide = autobuild)
-        type: string
-        default: ""
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -39,16 +31,9 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
-          source-root: ${{ inputs.working-directory }}
 
       - name: Autobuild
-        if: inputs.build-command == ''
         uses: github/codeql-action/autobuild@v3
-
-      - name: Custom build
-        if: inputs.build-command != ''
-        working-directory: ${{ inputs.working-directory }}
-        run: ${{ inputs.build-command }}
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
