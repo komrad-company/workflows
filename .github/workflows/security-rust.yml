@@ -27,6 +27,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ inputs.rust-version }}
+      - name: Install Rust native build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential pkg-config libssl-dev ca-certificates
       - name: Install cargo-audit
         run: cargo install cargo-audit --locked
       - name: Run cargo audit
@@ -47,6 +51,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ inputs.rust-version }}
+      - name: Install Rust native build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential pkg-config libssl-dev ca-certificates
       - name: Install cargo-deny
         run: cargo install cargo-deny --locked
       - name: Run cargo deny
