@@ -19,6 +19,11 @@ on:
         description: Script de couverture des parsers
         type: string
         default: "ci/coverage.sh"
+    secrets:
+      DOCKERHUB_USERNAME:
+        required: true
+      DOCKERHUB_TOKEN:
+        required: true
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -29,6 +34,9 @@ jobs:
     runs-on: komrad-runners
     container:
       image: ${{ inputs.vector-image }}
+      credentials:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v5
       - name: Validate Vector configs
@@ -49,6 +57,9 @@ jobs:
     runs-on: komrad-runners
     container:
       image: ${{ inputs.vector-image }}
+      credentials:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v5
       - name: Run Vector tests
@@ -69,6 +80,9 @@ jobs:
     runs-on: komrad-runners
     container:
       image: ${{ inputs.vector-image }}
+      credentials:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v5
       - name: Check coverage
