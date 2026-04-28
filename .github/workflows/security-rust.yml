@@ -29,8 +29,9 @@ jobs:
           toolchain: ${{ inputs.rust-version }}
       - name: Install Rust native build dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends build-essential pkg-config libssl-dev ca-certificates
+          sudo find /etc/apt -type f \( -name '*.list' -o -name '*.sources' \) -exec sed -i -E 's#http://(archive|security)\.ubuntu\.com/ubuntu#https://\1.ubuntu.com/ubuntu#g' {} +
+          sudo apt-get -o Acquire::ForceIPv4=true update
+          sudo apt-get -o Acquire::ForceIPv4=true install -y --no-install-recommends build-essential pkg-config libssl-dev ca-certificates
       - name: Install cargo-audit
         run: cargo install cargo-audit --locked
       - name: Run cargo audit
@@ -53,8 +54,9 @@ jobs:
           toolchain: ${{ inputs.rust-version }}
       - name: Install Rust native build dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends build-essential pkg-config libssl-dev ca-certificates
+          sudo find /etc/apt -type f \( -name '*.list' -o -name '*.sources' \) -exec sed -i -E 's#http://(archive|security)\.ubuntu\.com/ubuntu#https://\1.ubuntu.com/ubuntu#g' {} +
+          sudo apt-get -o Acquire::ForceIPv4=true update
+          sudo apt-get -o Acquire::ForceIPv4=true install -y --no-install-recommends build-essential pkg-config libssl-dev ca-certificates
       - name: Install cargo-deny
         run: cargo install cargo-deny --locked
       - name: Run cargo deny

@@ -54,8 +54,9 @@ jobs:
           workspaces: "${{ inputs.working-directory }} -> target"
       - name: Install Rust native build dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends build-essential pkg-config libssl-dev ca-certificates
+          sudo find /etc/apt -type f \( -name '*.list' -o -name '*.sources' \) -exec sed -i -E 's#http://(archive|security)\.ubuntu\.com/ubuntu#https://\1.ubuntu.com/ubuntu#g' {} +
+          sudo apt-get -o Acquire::ForceIPv4=true update
+          sudo apt-get -o Acquire::ForceIPv4=true install -y --no-install-recommends build-essential pkg-config libssl-dev ca-certificates
       - name: cargo fmt --check
         working-directory: ${{ inputs.working-directory }}
         run: cargo fmt --check
@@ -79,8 +80,9 @@ jobs:
           workspaces: "${{ inputs.working-directory }} -> target"
       - name: Install Rust native build dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends build-essential pkg-config libssl-dev ca-certificates
+          sudo find /etc/apt -type f \( -name '*.list' -o -name '*.sources' \) -exec sed -i -E 's#http://(archive|security)\.ubuntu\.com/ubuntu#https://\1.ubuntu.com/ubuntu#g' {} +
+          sudo apt-get -o Acquire::ForceIPv4=true update
+          sudo apt-get -o Acquire::ForceIPv4=true install -y --no-install-recommends build-essential pkg-config libssl-dev ca-certificates
       - name: cargo test
         if: inputs.run-tests
         working-directory: ${{ inputs.working-directory }}
