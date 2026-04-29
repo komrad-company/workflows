@@ -22,7 +22,7 @@ jobs:
     runs-on: komrad-runners
     steps:
       - uses: actions/checkout@v5
-      - uses: hadolint/hadolint-action@v3
+      - uses: hadolint/hadolint-action@v3.3.0
         with:
           dockerfile: ${{ inputs.dockerfile }}
 
