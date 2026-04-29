@@ -75,7 +75,7 @@ jobs:
     name: CI report
     runs-on: komrad-runners
     needs: [validate, test]
-    if: always()
+    if: needs.validate.result != 'cancelled' && needs.test.result != 'cancelled'
     steps:
       - uses: actions/checkout@v5
       - uses: actions/download-artifact@v5
