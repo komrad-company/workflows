@@ -3,19 +3,10 @@ name: Svelte Check
 on:
   workflow_call:
     inputs:
-      node-version:
-        description: Version Node.js
-        type: string
-        default: "22"
       working-directory:
         description: Répertoire contenant package.json
         type: string
         default: "."
-      lockfile-path:
-        description: Chemin du lockfile pour le cache npm
-        type: string
-        default: "package-lock.json"
-
 
 jobs:
   svelte-check:
@@ -25,9 +16,9 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: ${{ inputs.node-version }}
+          node-version: "22"
           cache: npm
-          cache-dependency-path: ${{ inputs.lockfile-path }}
+          cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
       - name: Install deps
         working-directory: ${{ inputs.working-directory }}
         run: npm ci --ignore-scripts

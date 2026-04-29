@@ -2,12 +2,6 @@ name: Security — Rust
 
 on:
   workflow_call:
-    inputs:
-      working-directory:
-        description: Répertoire contenant le Cargo.toml racine
-        type: string
-        default: "."
-
 permissions:
   contents: read
 
@@ -28,4 +22,4 @@ jobs:
       - uses: actions/checkout@v5
       - uses: EmbarkStudios/cargo-deny-action@v2
         with:
-          manifest-path: ${{ inputs.working-directory }}/Cargo.toml
+          manifest-path: api/Cargo.toml
