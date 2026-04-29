@@ -104,7 +104,8 @@ jobs:
     uses: komrad-company/workflows/.github/workflows/security-secrets.yml@main
 ```
 
-Aucun input. Utilise `gitleaks/gitleaks-action@v2`. Rapport SARIF uploadé 30 jours.
+Aucun input. Télécharge `gitleaks` v8.30.1 puis exécute
+`gitleaks detect --source . --verbose` avec `fetch-depth: 0`.
 
 ---
 
@@ -114,13 +115,20 @@ Aucun input. Utilise `gitleaks/gitleaks-action@v2`. Rapport SARIF uploadé 30 jo
 jobs:
   rust:
     uses: komrad-company/workflows/.github/workflows/security-rust.yml@main
+    with:
+      manifest-path: api/Cargo.toml
 ```
 
-Aucun input. Deux jobs parallèles :
+| Input | Type | Défaut | Description |
+|---|---|---|---|
+| `manifest-path` | string | `"api/Cargo.toml"` | Chemin du `Cargo.toml` analysé par `cargo-deny` |
+
+Deux jobs parallèles :
 - `cargo-audit` via `rustsec/audit-check@v2` (advisory DB RustSec)
 - `cargo-deny` via `EmbarkStudios/cargo-deny-action@v2` (licences, bans, advisories)
 
-Hardcodé sur `api/Cargo.toml`.
+Le défaut reste `api/Cargo.toml` pour les anciens monorepos. Pour un repo Rust
+racine, passer `manifest-path: Cargo.toml`.
 
 ---
 
@@ -139,7 +147,7 @@ jobs:
 |---|---|---|---|
 | `dockerfile` | string | `"Dockerfile"` | Chemin du Dockerfile |
 
-Deux jobs : `hadolint` via `hadolint/hadolint-action@v3` + `grype` via `anchore/scan-action@v5` (seuil HIGH+ avec fix). Pour plusieurs Dockerfiles, appeler le workflow plusieurs fois.
+Deux jobs : `hadolint` via `hadolint/hadolint-action@v3.3.0` + `grype` via `anchore/scan-action@v5` (seuil HIGH+ avec fix). Pour plusieurs Dockerfiles, appeler le workflow plusieurs fois.
 
 ---
 
@@ -200,7 +208,7 @@ jobs:
     secrets: inherit
 ```
 
-### Kontrol (Rust API + SvelteKit UI)
+### Kontrol-api (Rust API)
 
 ```yaml
 # ci.yml
@@ -208,32 +216,17 @@ jobs:
   rust:
     uses: komrad-company/workflows/.github/workflows/rust-checks.yml@main
     with:
-      working-directory: api
       sqlx-offline: true
       artifact-name: kontrol-api
       binary-path: target/release/kontrol-api
 
-  svelte:
-    uses: komrad-company/workflows/.github/workflows/svelte-check.yml@main
-    with:
-      working-directory: ui
-
-  publish-api:
-    needs: [rust, svelte]
+  publish:
+    needs: [rust]
     if: github.ref == 'refs/heads/main'
     uses: komrad-company/workflows/.github/workflows/docker-publish.yml@main
     with:
-      context: api
-      image: ghcr.io/komrad-company/kontrol/api
-    secrets: inherit
-
-  publish-ui:
-    needs: [rust, svelte]
-    if: github.ref == 'refs/heads/main'
-    uses: komrad-company/workflows/.github/workflows/docker-publish.yml@main
-    with:
-      context: ui
-      image: ghcr.io/komrad-company/kontrol/ui
+      context: .
+      image: ghcr.io/komrad-company/kontrol-api
     secrets: inherit
 
 # security.yml
@@ -242,18 +235,37 @@ jobs:
     uses: komrad-company/workflows/.github/workflows/security-secrets.yml@main
   rust:
     uses: komrad-company/workflows/.github/workflows/security-rust.yml@main
-  docker-api:
-    uses: komrad-company/workflows/.github/workflows/security-docker.yml@main
     with:
-      dockerfile: "api/Dockerfile"
-    secrets: inherit
-  docker-ui:
+      manifest-path: Cargo.toml
+  docker:
     uses: komrad-company/workflows/.github/workflows/security-docker.yml@main
-    with:
-      dockerfile: "ui/Dockerfile"
     secrets: inherit
+```
+
+### Kontrol-ui (SvelteKit UI)
+
+```yaml
+# ci.yml
+jobs:
+  svelte:
+    uses: komrad-company/workflows/.github/workflows/svelte-check.yml@main
+
+  publish:
+    needs: [svelte]
+    if: github.ref == 'refs/heads/main'
+    uses: komrad-company/workflows/.github/workflows/docker-publish.yml@main
+    with:
+      context: .
+      image: ghcr.io/komrad-company/kontrol-ui
+    secrets: inherit
+
+# security.yml
+jobs:
+  secrets:
+    uses: komrad-company/workflows/.github/workflows/security-secrets.yml@main
   npm:
     uses: komrad-company/workflows/.github/workflows/security-npm.yml@main
-    with:
-      working-directory: ui
+  docker:
+    uses: komrad-company/workflows/.github/workflows/security-docker.yml@main
+    secrets: inherit
 ```
