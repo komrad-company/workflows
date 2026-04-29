@@ -11,16 +11,6 @@ permissions:
   contents: read
 
 jobs:
-  cargo-audit:
-    name: cargo audit (RustSec)
-    runs-on: komrad-runners
-    steps:
-      - uses: actions/checkout@v5
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: rustsec/audit-check@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
   cargo-deny:
     name: cargo deny (licences + bans + advisories)
     runs-on: komrad-runners
