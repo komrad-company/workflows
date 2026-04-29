@@ -7,24 +7,11 @@ on:
         description: Image Docker Vector à utiliser
         type: string
         default: "timberio/vector:0.54.0-debian"
-      validate-script:
-        description: Script de validation des configs
-        type: string
-        default: "ci/validate.sh"
-      test-script:
-        description: Script de tests Vector
-        type: string
-        default: "ci/test.sh"
-      coverage-script:
-        description: Script de couverture des parsers
-        type: string
-        default: "ci/coverage.sh"
     secrets:
       DOCKERHUB_USERNAME:
         required: true
       DOCKERHUB_TOKEN:
         required: true
-
 
 jobs:
   validate:
@@ -38,11 +25,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Validate Vector configs
-        env:
-          VALIDATE_SCRIPT: ${{ inputs.validate-script }}
         run: |
-          chmod +x "$VALIDATE_SCRIPT"
-          "$VALIDATE_SCRIPT"
+          chmod +x ci/validate.sh
+          ci/validate.sh
       - uses: actions/upload-artifact@v5
         if: always()
         with:
@@ -61,11 +46,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Run Vector tests
-        env:
-          TEST_SCRIPT: ${{ inputs.test-script }}
         run: |
-          chmod +x "$TEST_SCRIPT"
-          "$TEST_SCRIPT"
+          chmod +x ci/test.sh
+          ci/test.sh
       - uses: actions/upload-artifact@v5
         if: always()
         with:
@@ -84,11 +67,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Check coverage
-        env:
-          COVERAGE_SCRIPT: ${{ inputs.coverage-script }}
         run: |
-          chmod +x "$COVERAGE_SCRIPT"
-          "$COVERAGE_SCRIPT"
+          chmod +x ci/coverage.sh
+          ci/coverage.sh
 
   report:
     name: CI report
