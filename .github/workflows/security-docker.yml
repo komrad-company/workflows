@@ -22,13 +22,9 @@ jobs:
     runs-on: komrad-runners
     steps:
       - uses: actions/checkout@v5
-      - name: Install hadolint
-        run: |
-          curl -sSLo hadolint https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint-Linux-x86_64
-          chmod +x hadolint
-          sudo mv hadolint /usr/local/bin/
-      - name: Run hadolint
-        run: hadolint "${{ inputs.dockerfile }}"
+      - uses: hadolint/hadolint-action@v3
+        with:
+          dockerfile: ${{ inputs.dockerfile }}
 
   grype:
     name: grype (${{ inputs.dockerfile }})
@@ -40,24 +36,18 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Install grype
-        run: |
-          curl -sSLo grype.tar.gz "https://github.com/anchore/grype/releases/download/v0.87.0/grype_0.87.0_linux_amd64.tar.gz"
-          tar -xzf grype.tar.gz grype
-          sudo mv grype /usr/local/bin/
-          rm grype.tar.gz
-      - name: Build and scan
+      - name: Build image
         env:
           DOCKERFILE: ${{ inputs.dockerfile }}
         run: |
           ctx=$(dirname "$DOCKERFILE")
           [ "$ctx" = "." ] && label="app" || label=$(basename "$ctx")
           docker build -t "scan-${label}:latest" -f "$DOCKERFILE" "$ctx"
-          grype "docker:scan-${label}:latest" --fail-on high --only-fixed --output json > "grype-${label}.json" || true
-          grype "docker:scan-${label}:latest" --fail-on high --only-fixed --output table
-      - uses: actions/upload-artifact@v5
-        if: always()
+          echo "IMAGE=scan-${label}:latest" >> "$GITHUB_ENV"
+      - uses: anchore/scan-action@v5
         with:
-          name: grype-report-${{ inputs.dockerfile == 'Dockerfile' && 'app' || inputs.dockerfile }}
-          path: grype-*.json
-          retention-days: 30
+          image: ${{ env.IMAGE }}
+          fail-build: true
+          severity-cutoff: high
+          only-fixed: true
+          output-format: table
