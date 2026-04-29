@@ -36,9 +36,6 @@ on:
         type: string
         default: ""
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-
 jobs:
   lint:
     name: Lint (fmt + clippy)
@@ -52,11 +49,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: "${{ inputs.working-directory }} -> target"
-      - name: Install Rust native build dependencies
-        run: |
-          sudo find /etc/apt -type f \( -name '*.list' -o -name '*.sources' \) -exec sed -i -E 's#http://(archive|security)\.ubuntu\.com/ubuntu#https://\1.ubuntu.com/ubuntu#g' {} +
-          sudo apt-get -o Acquire::ForceIPv4=true update
-          sudo apt-get -o Acquire::ForceIPv4=true install -y --no-install-recommends build-essential pkg-config libssl-dev ca-certificates
+      - uses: komrad-company/workflows/.github/actions/rust-native-deps@main
       - name: cargo fmt --check
         working-directory: ${{ inputs.working-directory }}
         run: cargo fmt --check
@@ -78,11 +71,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: "${{ inputs.working-directory }} -> target"
-      - name: Install Rust native build dependencies
-        run: |
-          sudo find /etc/apt -type f \( -name '*.list' -o -name '*.sources' \) -exec sed -i -E 's#http://(archive|security)\.ubuntu\.com/ubuntu#https://\1.ubuntu.com/ubuntu#g' {} +
-          sudo apt-get -o Acquire::ForceIPv4=true update
-          sudo apt-get -o Acquire::ForceIPv4=true install -y --no-install-recommends build-essential pkg-config libssl-dev ca-certificates
+      - uses: komrad-company/workflows/.github/actions/rust-native-deps@main
       - name: cargo test
         if: inputs.run-tests
         working-directory: ${{ inputs.working-directory }}
