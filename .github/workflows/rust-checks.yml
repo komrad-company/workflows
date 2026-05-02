@@ -4,23 +4,23 @@ on:
   workflow_call:
     inputs:
       working-directory:
-        description: Répertoire contenant le Cargo.toml racine
+        description: Directory containing the root Cargo.toml
         type: string
         default: "."
       workspace:
-        description: Passe --workspace à cargo fmt/clippy/test
+        description: Passes --workspace to cargo fmt/clippy/test
         type: boolean
         default: false
       sqlx-offline:
-        description: Injecte SQLX_OFFLINE=true (pas de DB au build)
+        description: Injects SQLX_OFFLINE=true (no DB at build time)
         type: boolean
         default: false
       artifact-name:
-        description: Nom de l'artifact uploadé (vide = pas d'upload)
+        description: Artifact name (empty = no upload)
         type: string
         default: ""
       binary-path:
-        description: Chemin du binaire relatif au working-directory (ex. target/release/monapp)
+        description: Binary path relative to working-directory (e.g. target/release/myapp)
         type: string
         default: ""
 

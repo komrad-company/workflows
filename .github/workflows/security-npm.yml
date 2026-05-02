@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       working-directory:
-        description: Répertoire contenant package.json
+        description: Directory containing package.json
         type: string
         default: "."
 

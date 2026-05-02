@@ -4,11 +4,11 @@ on:
   workflow_call:
     inputs:
       context:
-        description: Contexte Docker (répertoire contenant le Dockerfile)
+        description: Docker context (directory containing the Dockerfile)
         required: true
         type: string
       image:
-        description: Nom complet de l'image (ex. ghcr.io/komrad-company/kolektor)
+        description: Full image name (e.g. ghcr.io/komrad-company/kolektor)
         required: true
         type: string
 

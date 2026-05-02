@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       manifest-path:
-        description: Chemin du Cargo.toml a analyser avec cargo-deny
+        description: Path to the Cargo.toml to analyse with cargo-deny
         type: string
         default: "api/Cargo.toml"
 permissions:

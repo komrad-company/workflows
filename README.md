@@ -1,9 +1,9 @@
 # komrad-company/workflows
 
-Workflows CI réutilisables GitHub Actions pour les projets Komrad Company.
+Reusable GitHub Actions CI workflows for Komrad Company projects.
 
-> **Runners** : tous les templates ciblent `komrad-runners` (self-hosted ARC).  
-> **Versioning** : `@main` — repo privé, pas de tags.
+> **Runners**: all templates target `komrad-runners` (self-hosted ARC).  
+> **Versioning**: `@main` — private repo, no tags.
 
 ---
 
@@ -16,22 +16,22 @@ jobs:
   rust:
     uses: komrad-company/workflows/.github/workflows/rust-checks.yml@main
     with:
-      working-directory: api   # répertoire contenant Cargo.toml
-      workspace: true          # passe --workspace à fmt/clippy/test
-      sqlx-offline: true       # injecte SQLX_OFFLINE=true (pas de DB au build)
-      artifact-name: mon-api   # upload le binaire compilé (optionnel)
-      binary-path: target/release/mon-api
+      working-directory: api   # directory containing Cargo.toml
+      workspace: true          # passes --workspace to fmt/clippy/test
+      sqlx-offline: true       # injects SQLX_OFFLINE=true (no DB at build time)
+      artifact-name: my-api    # upload the compiled binary (optional)
+      binary-path: target/release/my-api
 ```
 
-| Input | Type | Défaut | Description |
+| Input | Type | Default | Description |
 |---|---|---|---|
-| `working-directory` | string | `"."` | Répertoire contenant `Cargo.toml` |
-| `workspace` | boolean | `false` | Passe `--workspace` à fmt/clippy/test |
-| `sqlx-offline` | boolean | `false` | Injecte `SQLX_OFFLINE=true` |
-| `artifact-name` | string | `""` | Nom de l'artifact (vide = pas d'upload) |
-| `binary-path` | string | `""` | Chemin du binaire relatif au `working-directory` |
+| `working-directory` | string | `"."` | Directory containing `Cargo.toml` |
+| `workspace` | boolean | `false` | Passes `--workspace` to fmt/clippy/test |
+| `sqlx-offline` | boolean | `false` | Injects `SQLX_OFFLINE=true` |
+| `artifact-name` | string | `""` | Artifact name (empty = no upload) |
+| `binary-path` | string | `""` | Binary path relative to `working-directory` |
 
-Deux jobs : `lint` (fmt + clippy) → `build` (test + release). Toolchain : `stable`. Cache via `Swatinem/rust-cache@v2`. Parallélisme limité à 2 jobs (`CARGO_BUILD_JOBS=2`).
+Two jobs: `lint` (fmt + clippy) → `build` (test + release). Toolchain: `stable`. Cache via `Swatinem/rust-cache@v2`. Parallelism limited to 2 jobs (`CARGO_BUILD_JOBS=2`).
 
 ---
 
@@ -45,15 +45,15 @@ jobs:
       working-directory: ui
 ```
 
-| Input | Type | Défaut | Description |
+| Input | Type | Default | Description |
 |---|---|---|---|
-| `working-directory` | string | `"."` | Répertoire contenant `package.json` |
+| `working-directory` | string | `"."` | Directory containing `package.json` |
 
-Node 22. Exécute `npm ci --ignore-scripts` puis `npm run check`.
+Node 22. Runs `npm ci --ignore-scripts` then `npm run check`.
 
 ---
 
-### `docker-publish.yml` — Build & Push image GHCR
+### `docker-publish.yml` — Build & Push GHCR image
 
 ```yaml
 jobs:
@@ -62,16 +62,16 @@ jobs:
     uses: komrad-company/workflows/.github/workflows/docker-publish.yml@main
     with:
       context: api
-      image: ghcr.io/komrad-company/mon-service
+      image: ghcr.io/komrad-company/my-service
     secrets: inherit
 ```
 
-| Input | Type | Défaut | Description |
+| Input | Type | Default | Description |
 |---|---|---|---|
-| `context` | string | **requis** | Contexte Docker (ex. `api`, `.`) |
-| `image` | string | **requis** | Nom complet de l'image |
+| `context` | string | **required** | Docker context (e.g. `api`, `.`) |
+| `image` | string | **required** | Full image name |
 
-Tags produits : `<image>:<sha>` + `<image>:latest`. Cache layers GHA activé. Permissions `packages: write` déclarées en interne. Requiert `secrets: inherit`.
+Tags produced: `<image>:<sha>` + `<image>:latest`. GHA layer cache enabled. `packages: write` permission declared internally. Requires `secrets: inherit`.
 
 ---
 
@@ -86,17 +86,17 @@ jobs:
     secrets: inherit
 ```
 
-| Input | Type | Défaut | Description |
+| Input | Type | Default | Description |
 |---|---|---|---|
-| `vector-image` | string | `"timberio/vector:0.54.0-debian"` | Image Docker Vector |
+| `vector-image` | string | `"timberio/vector:0.54.0-debian"` | Vector Docker image |
 
-Quatre jobs : `validate` (`ci/validate.sh`), `test` (`ci/test.sh`), `coverage` (`ci/coverage.sh`), `report` (needs: validate, test). Requiert `secrets: inherit` (Docker Hub pour pull l'image Vector).
+Four jobs: `validate` (`ci/validate.sh`), `test` (`ci/test.sh`), `coverage` (`ci/coverage.sh`), `report` (needs: validate, test). Requires `secrets: inherit` (Docker Hub to pull the Vector image).
 
 ---
 
-## Sécurité
+## Security
 
-### `security-secrets.yml` — Scan de secrets
+### `security-secrets.yml` — Secret scanning
 
 ```yaml
 jobs:
@@ -104,12 +104,12 @@ jobs:
     uses: komrad-company/workflows/.github/workflows/security-secrets.yml@main
 ```
 
-Aucun input. Télécharge `gitleaks` v8.30.1 puis exécute
-`gitleaks detect --source . --verbose` avec `fetch-depth: 0`.
+No inputs. Downloads `gitleaks` v8.30.1 then runs
+`gitleaks detect --source . --verbose` with `fetch-depth: 0`.
 
 ---
 
-### `security-rust.yml` — Audit dépendances Rust
+### `security-rust.yml` — Rust dependency audit
 
 ```yaml
 jobs:
@@ -119,20 +119,20 @@ jobs:
       manifest-path: api/Cargo.toml
 ```
 
-| Input | Type | Défaut | Description |
+| Input | Type | Default | Description |
 |---|---|---|---|
-| `manifest-path` | string | `"api/Cargo.toml"` | Chemin du `Cargo.toml` analysé par `cargo-deny` |
+| `manifest-path` | string | `"api/Cargo.toml"` | Path to the `Cargo.toml` analysed by `cargo-deny` |
 
-Deux jobs parallèles :
-- `cargo-audit` via `rustsec/audit-check@v2` (advisory DB RustSec)
-- `cargo-deny` via `EmbarkStudios/cargo-deny-action@v2` (licences, bans, advisories)
+Two parallel jobs:
+- `cargo-audit` via `rustsec/audit-check@v2` (RustSec advisory DB)
+- `cargo-deny` via `EmbarkStudios/cargo-deny-action@v2` (licenses, bans, advisories)
 
-Le défaut reste `api/Cargo.toml` pour les anciens monorepos. Pour un repo Rust
-racine, passer `manifest-path: Cargo.toml`.
+The default remains `api/Cargo.toml` for legacy monorepos. For a root Rust repo,
+pass `manifest-path: Cargo.toml`.
 
 ---
 
-### `security-docker.yml` — Audit image Docker
+### `security-docker.yml` — Docker image audit
 
 ```yaml
 jobs:
@@ -143,15 +143,15 @@ jobs:
     secrets: inherit
 ```
 
-| Input | Type | Défaut | Description |
+| Input | Type | Default | Description |
 |---|---|---|---|
-| `dockerfile` | string | `"Dockerfile"` | Chemin du Dockerfile |
+| `dockerfile` | string | `"Dockerfile"` | Path to the Dockerfile |
 
-Deux jobs : `hadolint` via `hadolint/hadolint-action@v3.3.0` + `grype` via `anchore/scan-action@v5` (seuil HIGH+ avec fix). Pour plusieurs Dockerfiles, appeler le workflow plusieurs fois.
+Two jobs: `hadolint` via `hadolint/hadolint-action@v3.3.0` + `grype` via `anchore/scan-action@v5` (HIGH+ threshold with fix). For multiple Dockerfiles, call the workflow multiple times.
 
 ---
 
-### `security-npm.yml` — Audit dépendances NPM
+### `security-npm.yml` — NPM dependency audit
 
 ```yaml
 jobs:
@@ -161,15 +161,15 @@ jobs:
       working-directory: ui
 ```
 
-| Input | Type | Défaut | Description |
+| Input | Type | Default | Description |
 |---|---|---|---|
-| `working-directory` | string | `"."` | Répertoire contenant `package.json` |
+| `working-directory` | string | `"."` | Directory containing `package.json` |
 
-Node 22. `npm audit --audit-level=high`. Rapport JSON uploadé 30 jours.
+Node 22. `npm audit --audit-level=high`. JSON report uploaded for 30 days.
 
 ---
 
-## Exemples — projets actuels
+## Examples — current projects
 
 ### Kolektor (Vector + Rust + Docker)
 

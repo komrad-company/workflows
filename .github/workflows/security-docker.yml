@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       dockerfile:
-        description: Chemin du Dockerfile (ex. "api/Dockerfile")
+        description: Path to the Dockerfile (e.g. "api/Dockerfile")
         type: string
         default: "Dockerfile"
     secrets:
