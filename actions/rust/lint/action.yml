@@ -10,6 +10,6 @@ runs:
           with:
             name: build
 
-        - run: cargo lint
+        - run: cargo fmt --check
           shell: bash
 

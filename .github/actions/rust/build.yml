@@ -1,0 +1,11 @@
+name: Rust Build steps
+
+jobs:
+    build:
+        name: Build crate
+        runs-on: ubuntu-latest
+        steps:
+            - uses: action/checkout@v4
+
+            - name: Setup Rust
+              uses: dtolnay/rust-toolchain@stable
